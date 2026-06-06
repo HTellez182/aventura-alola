@@ -5518,18 +5518,23 @@ function populateGifElements(root) {
             String(u.password || '').trim() === passwordNormalizado
         );
 
-        if (user) return user;
+        if (user) {
+            return user;
+        }
 
         const baseUser = USUARIOS_BASE.find(u =>
             String(u.usuario || '').trim().toLowerCase() === usuarioNormalizado &&
             String(u.password || '').trim() === passwordNormalizado
         );
 
-        if (!baseUser) return null;
+        if (!baseUser) {
+            return null;
+        }
 
         sincronizarUsuarioEnLista(baseUser);
         persistirDatosLocalmente();
-        return usuarios.find(u => u.usuario === baseUser.usuario) || baseUser;
+        const foundUser = usuarios.find(u => u.usuario === baseUser.usuario) || baseUser;
+        return foundUser;
     }
 
     function rellenarLoginPrueba(usuario, password) {
