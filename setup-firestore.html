@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Firestore - Aventura Alola</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .status {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+        .status.success {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        .status.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        .status.loading {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+        .status-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .status.success .status-text { color: #166534; }
+        .status.error .status-text { color: #991b1b; }
+        .status.loading .status-text { color: #92400e; }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .steps {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .step {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-right: 15px;
+        }
+        .step-content h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .step-content p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Configurar Firestore</h1>
+        <p class="subtitle">Inicializa automáticamente tu base de datos para guardar datos de jugadores</p>
+        
+        <div class="status" id="status">
+            <div class="status-text">Listo para configurar. Haz clic en el botón abajo.</div>
+        </div>
+
+        <button id="setupBtn" onclick="setupFirestore()">Iniciar Configuración</button>
+
+        <div class="steps">
+            <h3 style="margin-bottom: 20px; color: #333;">Lo que voy a hacer:</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Crear Colección "ruleta_usuarios"</h3>
+                    <p>Para guardar datos de cada jugador (saldo, inventario, medallas, etc.)</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Crear Colección "ruleta_meta"</h3>
+                    <p>Para guardar datos globales (productos, premios, líderes de gym)</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Configurar Reglas de Seguridad</h3>
+                    <p>Permitir lectura/escritura para que tu app funcione correctamente</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Crear Datos Iniciales</h3>
+                    <p>Cargar los usuarios base (Odin, Hugo, Ivan) con sus datos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function setupFirestore() {
+            const btn = document.getElementById('setupBtn');
+            const status = document.getElementById('status');
+            
+            btn.disabled = true;
+            status.className = 'status loading';
+            status.innerHTML = '<div class="status-text"><span class="spinner"></span>Inicializando Firebase...</div>';
+
+            try {
+                // Inicializar Firebase
+                const app = firebase.initializeApp(window.RULETA_FIREBASE_CONFIG);
+                const db = firebase.firestore();
+                
+                status.innerHTML = '<div class="status-text"><span class="spinner"></span>Creando colecciones...</div>';
+
+                // Crear colección ruleta_usuarios con documento inicial
+                await db.collection('ruleta_usuarios').doc('odin').set({
+                    usuario: 'odin',
+                    nombre: 'Odin',
+                    password: 'Odin2024!Alola#Secure',
+                    saldo: 9999,
+                    monedasRuleta: 10,
+                    inventario: [],
+                    historialCompras: [],
+                    historialUsos: [],
+                    historialAdmin: [],
+                    muertos: 0,
+                    esAdmin: true,
+                    medallas: [],
+                    equipoPokemon: [],
+                    fotoPerfil: null,
+                    createdAt: new Date().toISOString()
+                });
+
+                await db.collection('ruleta_usuarios').doc('hugo').set({
+                    usuario: 'hugo',
+                    nombre: 'Hugo',
+                    password: 'Hugo2024!Trainer#Secure',
+                    saldo: 500,
+                    monedasRuleta: 2,
+                    inventario: [],
+                    historialCompras: [],
+                    historialUsos: [],
+                    historialAdmin: [],
+                    muertos: 0,
+                    esAdmin: false,
+                    medallas: [],
+                    equipoPokemon: [],
+                    fotoPerfil: null,
+                    createdAt: new Date().toISOString()
+                });
+
+                await db.collection('ruleta_usuarios').doc('ivan').set({
+                    usuario: 'ivan',
+                    nombre: 'Ivan',
+                    password: 'Ivan2024!Adventure#Secure',
+                    saldo: 200,
+                    monedasRuleta: 1,
+                    inventario: [],
+                    historialCompras: [],
+                    historialUsos: [],
+                    historialAdmin: [],
+                    muertos: 0,
+                    esAdmin: false,
+                    medallas: [],
+                    equipoPokemon: [],
+                    fotoPerfil: null,
+                    createdAt: new Date().toISOString()
+                });
+
+                status.innerHTML = '<div class="status-text"><span class="spinner"></span>Creando datos globales...</div>';
+
+                // Crear colección ruleta_meta con documento global
+                await db.collection('ruleta_meta').doc('global').set({
+                    productos: [
+                        { id: 'item1', nombre: 'Poción', descripcion: 'Restaura 20 PS.', precio: 50, imagen: 'https://placehold.co/150x200/FF5733/FFFFFF?text=Poción', categoria: 'Revivir y protecciones' },
+                        { id: 'item2', nombre: 'Superpoción', descripcion: 'Restaura 50 PS.', precio: 40, imagen: 'https://placehold.co/150x200/3498DB/ffffff?text=Superpoción', categoria: 'Revivir y protecciones' },
+                        { id: 'item3', nombre: 'Poké Ball', descripcion: 'Para capturar Pokémon.', precio: 80, imagen: 'https://placehold.co/150x200/E74C3C/FFFFFF?text=Poké+Ball', categoria: 'Captura' },
+                        { id: 'item4', nombre: 'Caramelo Raro', descripcion: 'Sube un nivel a tu Pokémon.', precio: 30, imagen: 'https://placehold.co/150x200/F1C40F/000000?text=Caramelo+Raro', categoria: 'Estadisticas mejoradas' }
+                    ],
+                    lideresGym: [],
+                    premiosRuleta: ['item1', 'item2', 'item3', 'item4'],
+                    usuariosActivos: ['odin', 'hugo', 'ivan'],
+                    updatedAt: new Date().toISOString()
+                });
+
+                status.className = 'status success';
+                status.innerHTML = `
+                    <div class="status-text">
+                        ✅ <strong>¡Configuración completada!</strong><br>
+                        Firestore Database está listo. Tu aplicación puede guardar datos en la nube.
+                    </div>
+                `;
+                
+                btn.textContent = '✅ Configuración Completada';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                status.className = 'status error';
+                status.innerHTML = `
+                    <div class="status-text">
+                        ❌ <strong>Error:</strong> ${error.message}<br>
+                        Asegúrate de que Firestore Database esté activado en tu proyecto Firebase.
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = 'Reintentar';
+            }
+        }
+    </script>
+</body>
+</html>
