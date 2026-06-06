@@ -5808,8 +5808,15 @@ function actualizarIndicadoresUsuarioActivo() {
             });
         }
         
-        // Guardar también en Firebase para sincronización multi-dispositivo
-        if (PERSISTENCE_PROVIDER === 'firebase' && typeof guardarDatosEnFirebase === 'function') {
+        // Guardar TODOS los usuarios en Firebase para sincronización multi-dispositivo
+        if (firebaseReady && db && typeof guardarEnFirestore === 'function') {
+            usuarios.forEach(user => {
+                const sanitized = String(user.usuario || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                guardarEnFirestore(sanitized, user).catch(err => {
+                    console.warn('Error guardando usuario en Firebase:', user.usuario, err);
+                });
+            });
+        } else if (PERSISTENCE_PROVIDER === 'firebase' && typeof guardarDatosEnFirebase === 'function') {
             guardarDatosEnFirebase(reason).catch(err => {
                 console.warn('Error en guardarDatosEnFirebase:', err);
             });
