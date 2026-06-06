@@ -5486,11 +5486,33 @@ function populateGifElements(root) {
         return false;
     }
 
-    function buscarUsuarioParaLogin(usuario, password) {
+    async function buscarUsuarioParaLogin(usuario, password) {
         const usuarioNormalizado = String(usuario || '').trim().toLowerCase();
         const passwordNormalizado = String(password || '').trim();
         asegurarUsuariosBaseDisponibles();
 
+        // Primero intentar cargar desde Firebase si está disponible
+        if (PERSISTENCE_PROVIDER === 'firebase' && typeof cargarDeFirestore === 'function') {
+            try {
+                const usuarioKey = sanitizarClaveUsuario(usuario);
+                const datosFirebase = await cargarDeFirestore(usuarioKey);
+                if (datosFirebase && datosFirebase.password === passwordNormalizado) {
+                    // Actualizar el array de usuarios locales con los datos de Firebase
+                    const idx = usuarios.findIndex(u => u.usuario === usuario);
+                    if (idx >= 0) {
+                        usuarios[idx] = datosFirebase;
+                    } else {
+                        usuarios.push(datosFirebase);
+                    }
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                    return datosFirebase;
+                }
+            } catch (err) {
+                console.warn('Error cargando usuario desde Firebase:', err);
+            }
+        }
+
+        // Fallback a búsqueda local
         let user = usuarios.find(u =>
             String(u.usuario || '').trim().toLowerCase() === usuarioNormalizado &&
             String(u.password || '').trim() === passwordNormalizado
@@ -5962,46 +5984,53 @@ function actualizarIndicadoresUsuarioActivo() {
         const password = document.getElementById("password").value.trim();
         const errorDiv = document.getElementById("error-message");
 
-        const user = buscarUsuarioParaLogin(usuario, password);
-        if (!user) {
-        errorDiv.innerText = "Usuario o contraseña incorrectos.";
+        // Hacer la búsqueda asíncrona
+        buscarUsuarioParaLogin(usuario, password).then(user => {
+            if (!user) {
+                errorDiv.innerText = "Usuario o contraseña incorrectos.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // Continuar con el login
+            usuarioActivo = user;
+            // Mostrar foto de perfil si existe
+            if (usuarioActivo.fotoPerfil) {
+                document.getElementById('fotoPerfilImg').src = usuarioActivo.fotoPerfil;
+                document.getElementById('fotoPerfilImg').classList.remove('hidden');
+                document.getElementById('iconoPerfilDefault').classList.add('hidden');
+            } else {
+                document.getElementById('fotoPerfilImg').classList.add('hidden');
+                document.getElementById('iconoPerfilDefault').classList.remove('hidden');
+            }
+
+            renderMedallasUsuario(usuarioActivo, 'contenedorMedallasPerfil');
+            mostrarBotonOtorgarMedalla();
+            mostrarBotonAdminUsuarios();
+            errorDiv.classList.add('hidden');
+            document.getElementById("nombreUsuario").innerText = usuarioActivo.nombre;
+            actualizarIndicadoresUsuarioActivo();
+            const btnMonedas = document.getElementById("btnMonedasRuleta");
+            if(btnMonedas) btnMonedas.innerText = usuarioActivo.monedasRuleta ?? 0;
+            // Renderizar equipo en el perfil si existe
+            if (typeof renderEquipoUsuarioPerfil === 'function') renderEquipoUsuarioPerfil(usuarioActivo);
+            if (typeof renderEquipoSincronizadoPerfil === 'function') renderEquipoSincronizadoPerfil(usuarioActivo);
+            cargarSesionMainSyncDeUsuario();
+            asegurarMainSyncParaUsuarioActual();
+            citraMainLastFingerprint = `${buildEquipoFingerprint(usuarioActivo.equipoPokemonSync || [])}|${buildPCFingerprint(usuarioActivo.pcPokemonSync || [])}`;
+            iniciarAutoSyncCitra();
+            cambiarVista(usuarioActivo.esAdmin ? 'admin' : 'dashboard');
+            
+            if (usuarioActivo.esAdmin) {
+                actualizarSelectorUsuarios();
+                renderProductosAdmin();
+            }
+            mostrarMensajeFlotante(`¡Bienvenido, ${usuarioActivo.nombre}!`, 'bg-green-600');
+        }).catch(err => {
+            console.error('Error en login:', err);
+            errorDiv.innerText = "Error al iniciar sesión. Intenta de nuevo.";
             errorDiv.classList.remove('hidden');
-            return;
-        }
-
-        usuarioActivo = user;
-        // Mostrar foto de perfil si existe
-        if (usuarioActivo.fotoPerfil) {
-            document.getElementById('fotoPerfilImg').src = usuarioActivo.fotoPerfil;
-            document.getElementById('fotoPerfilImg').classList.remove('hidden');
-            document.getElementById('iconoPerfilDefault').classList.add('hidden');
-        } else {
-            document.getElementById('fotoPerfilImg').classList.add('hidden');
-            document.getElementById('iconoPerfilDefault').classList.remove('hidden');
-        }
-
-    renderMedallasUsuario(usuarioActivo, 'contenedorMedallasPerfil');
-    mostrarBotonOtorgarMedalla();
-    mostrarBotonAdminUsuarios();
-        errorDiv.classList.add('hidden');
-        document.getElementById("nombreUsuario").innerText = usuarioActivo.nombre;
-        actualizarIndicadoresUsuarioActivo();
-        const btnMonedas = document.getElementById("btnMonedasRuleta");
-        if(btnMonedas) btnMonedas.innerText = usuarioActivo.monedasRuleta ?? 0;
-    // Renderizar equipo en el perfil si existe
-    if (typeof renderEquipoUsuarioPerfil === 'function') renderEquipoUsuarioPerfil(usuarioActivo);
-    if (typeof renderEquipoSincronizadoPerfil === 'function') renderEquipoSincronizadoPerfil(usuarioActivo);
-    cargarSesionMainSyncDeUsuario();
-    asegurarMainSyncParaUsuarioActual();
-    citraMainLastFingerprint = `${buildEquipoFingerprint(usuarioActivo.equipoPokemonSync || [])}|${buildPCFingerprint(usuarioActivo.pcPokemonSync || [])}`;
-    iniciarAutoSyncCitra();
-        cambiarVista(usuarioActivo.esAdmin ? 'admin' : 'dashboard');
-        
-        if (usuarioActivo.esAdmin) {
-            actualizarSelectorUsuarios();
-            renderProductosAdmin();
-        }
-        mostrarMensajeFlotante(`¡Bienvenido, ${usuarioActivo.nombre}!`, 'bg-green-600');
+        });
         
         // Guardar datos en Firebase
         if (firebaseReady && db) {
