@@ -9636,10 +9636,18 @@ function abrirAdminUsuarios() {
                         const newUser = { usuario: u, password: p, nombre: n, saldo: 0, monedasRuleta:0, inventario: [], historialCompras: [], historialUsos: [], historialAdmin: [], muertos: 0, esAdmin: false };
                         usuarios.push(newUser);
                         guardarDatos('new_user');
+                        
                         // Guardar inmediatamente en Firebase
-                        if (typeof guardarDatosEnFirebase === 'function') {
-                            guardarDatosEnFirebase('new_user').catch(err => console.warn('Error guardando en Firebase:', err));
+                        console.log('Guardando usuario en Firebase:', u);
+                        if (typeof guardarEnFirestore === 'function') {
+                            guardarEnFirestore(u, newUser)
+                                .then(() => console.log('Usuario guardado en Firebase:', u))
+                                .catch(err => console.warn('Error guardando en Firebase:', err));
+                        } else if (typeof guardarDatosEnFirebase === 'function') {
+                            guardarDatosEnFirebase('new_user')
+                                .catch(err => console.warn('Error guardando en Firebase:', err));
                         }
+                        
                         renderAdminUsuarios();
                         mostrarMensajeFlotante('Usuario agregado','bg-green-600');
                         document.getElementById('nuevoUsuarioNombre').value=''; document.getElementById('nuevoUsuarioPassword').value=''; document.getElementById('nuevoUsuarioDisplay').value='';
