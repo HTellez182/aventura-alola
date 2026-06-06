@@ -5794,6 +5794,13 @@ function actualizarIndicadoresUsuarioActivo() {
                 console.warn('Error en SyncManager:', err);
             });
         }
+        
+        // Guardar también en Firebase para sincronización multi-dispositivo
+        if (PERSISTENCE_PROVIDER === 'firebase' && typeof guardarDatosEnFirebase === 'function') {
+            guardarDatosEnFirebase(reason).catch(err => {
+                console.warn('Error en guardarDatosEnFirebase:', err);
+            });
+        }
     }
 
     function inicializarEventoFotoPerfil() {
@@ -9605,7 +9612,11 @@ function abrirAdminUsuarios() {
                         if (usuarios.find(x=>x.usuario===u)) { mostrarMensajeFlotante('Usuario ya existe','bg-red-600'); return; }
                         const newUser = { usuario: u, password: p, nombre: n, saldo: 0, monedasRuleta:0, inventario: [], historialCompras: [], historialUsos: [], historialAdmin: [], muertos: 0, esAdmin: false };
                         usuarios.push(newUser);
-                        guardarDatos();
+                        guardarDatos('new_user');
+                        // Guardar inmediatamente en Firebase
+                        if (typeof guardarDatosEnFirebase === 'function') {
+                            guardarDatosEnFirebase('new_user').catch(err => console.warn('Error guardando en Firebase:', err));
+                        }
                         renderAdminUsuarios();
                         mostrarMensajeFlotante('Usuario agregado','bg-green-600');
                         document.getElementById('nuevoUsuarioNombre').value=''; document.getElementById('nuevoUsuarioPassword').value=''; document.getElementById('nuevoUsuarioDisplay').value='';
