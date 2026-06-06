@@ -1,0 +1,7 @@
+{
+  "usuarios": [
+    {"usuario": "hugo", "password": "hugo", "nombre": "Hugo", "saldo": 450, "monedasRuleta": 0, "inventario": [], "historialCompras": [], "historialUsos": [], "historialAdmin": [], "muertos": 0, "esAdmin": false},
+    {"usuario": "ivan", "password": "ivan", "nombre": "Ivan", "saldo": 500, "monedasRuleta": 2, "inventario": [], "historialCompras": [], "historialUsos": [], "historialAdmin": [], "muertos": 0, "esAdmin": false},
+    {"usuario": "odin", "password": "admin", "nombre": "Odin", "saldo": 1000, "monedasRuleta": 10, "inventario": [], "historialCompras": [], "historialUsos": [], "historialAdmin": [], "muertos": 0, "esAdmin": true}
+  ]
+}

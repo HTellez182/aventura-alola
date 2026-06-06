@@ -5486,6 +5486,24 @@ function populateGifElements(root) {
         return false;
     }
 
+    async function cargarUsuariosDelServidor() {
+        try {
+            const response = await fetch('./usuarios.json');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.usuarios && Array.isArray(data.usuarios)) {
+                    usuarios = data.usuarios;
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                    console.log('Usuarios cargados desde servidor:', usuarios.length);
+                    return true;
+                }
+            }
+        } catch (err) {
+            console.warn('Error cargando usuarios del servidor:', err);
+        }
+        return false;
+    }
+
     function buscarUsuarioParaLogin(usuario, password) {
         const usuarioNormalizado = String(usuario || '').trim().toLowerCase();
         const passwordNormalizado = String(password || '').trim();
@@ -5972,9 +5990,13 @@ function actualizarIndicadoresUsuarioActivo() {
     }
     
     // ==================== LOGIN / LOGOUT ====================
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         console.log('=== INICIANDO LOGIN ===');
+        
+        // Cargar usuarios del servidor primero
+        await cargarUsuariosDelServidor();
+        
         iniciarPersistenciaServidor().catch(err => {
             console.warn('No se pudo hidratar la persistencia al iniciar sesión:', err);
         });
@@ -9644,16 +9666,16 @@ function abrirAdminUsuarios() {
                         usuarios.push(newUser);
                         guardarDatos('new_user');
                         
-                        // Guardar inmediatamente en Firebase
-                        console.log('Guardando usuario en Firebase:', u);
-                        if (typeof guardarEnFirestore === 'function') {
-                            guardarEnFirestore(u, newUser)
-                                .then(() => console.log('Usuario guardado en Firebase:', u))
-                                .catch(err => console.warn('Error guardando en Firebase:', err));
-                        } else if (typeof guardarDatosEnFirebase === 'function') {
-                            guardarDatosEnFirebase('new_user')
-                                .catch(err => console.warn('Error guardando en Firebase:', err));
-                        }
+                        // Guardar en usuarios.json del servidor
+                        console.log('Guardando usuario en servidor:', u);
+                        fetch('./usuarios.json', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuarios: usuarios })
+                        }).then(r => {
+                            if (r.ok) console.log('Usuario guardado en servidor:', u);
+                            else console.warn('Error guardando en servidor');
+                        }).catch(err => console.warn('Error guardando en servidor:', err));
                         
                         renderAdminUsuarios();
                         mostrarMensajeFlotante('Usuario agregado','bg-green-600');
