@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase SDK - Cargado más abajo en el documento -->
+    <script src="sync-users.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800;900&display=swap');
         body { font-family: 'Nunito', sans-serif; }
@@ -5507,12 +5508,31 @@ function populateGifElements(root) {
     function buscarUsuarioParaLogin(usuario, password) {
         const usuarioNormalizado = String(usuario || '').trim().toLowerCase();
         const passwordNormalizado = String(password || '').trim();
-        asegurarUsuariosBaseDisponibles();
 
         console.log('Buscando usuario:', usuarioNormalizado);
+
+        // Primero buscar en el sistema de sincronización
+        if (typeof userSync !== 'undefined') {
+            const syncUser = userSync.getUserByUsername(usuarioNormalizado);
+            if (syncUser && syncUser.password === passwordNormalizado) {
+                console.log('Usuario encontrado en sync:', usuarioNormalizado);
+                return {
+                    usuario: usuarioNormalizado,
+                    password: syncUser.password,
+                    tokens: syncUser.tokens || 500,
+                    pokegiro: syncUser.pokegiro || 2,
+                    equipo: syncUser.equipo || [],
+                    mochila: syncUser.mochila || [],
+                    medallas: syncUser.medallas || [],
+                    isAdmin: syncUser.isAdmin || false
+                };
+            }
+        }
+
+        // Fallback a sistema anterior
+        asegurarUsuariosBaseDisponibles();
         console.log('Usuarios disponibles:', usuarios.map(u => u.usuario));
 
-        // Busqueda en usuarios cargados
         let user = usuarios.find(u =>
             String(u.usuario || '').trim().toLowerCase() === usuarioNormalizado &&
             String(u.password || '').trim() === passwordNormalizado
@@ -5523,7 +5543,6 @@ function populateGifElements(root) {
             return user;
         }
 
-        // Busqueda en usuarios base
         const baseUser = USUARIOS_BASE.find(u =>
             String(u.usuario || '').trim().toLowerCase() === usuarioNormalizado &&
             String(u.password || '').trim() === passwordNormalizado
@@ -9666,16 +9685,21 @@ function abrirAdminUsuarios() {
                         usuarios.push(newUser);
                         guardarDatos('new_user');
                         
-                        // Guardar en usuarios.json del servidor
-                        console.log('Guardando usuario en servidor:', u);
-                        fetch('./usuarios.json', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ usuarios: usuarios })
-                        }).then(r => {
-                            if (r.ok) console.log('Usuario guardado en servidor:', u);
-                            else console.warn('Error guardando en servidor');
-                        }).catch(err => console.warn('Error guardando en servidor:', err));
+                        // Guardar en el sistema de sincronizacion
+                        try {
+                            if (typeof userSync !== 'undefined') {
+                                userSync.createUser(u, p, {
+                                    tokens: 500,
+                                    pokegiro: 2,
+                                    equipo: [],
+                                    mochila: [],
+                                    medallas: []
+                                });
+                                console.log('Usuario guardado en sync:', u);
+                            }
+                        } catch (err) {
+                            console.warn('Error guardando en sync:', err);
+                        }
                         
                         renderAdminUsuarios();
                         mostrarMensajeFlotante('Usuario agregado','bg-green-600');
