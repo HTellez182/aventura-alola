@@ -1,7 +1,4 @@
 node_modules/
-.DS_Store
-*.zip
-*-backup*
-index-*.html
 .env
-.env.local
+.DS_Store
+usuarios-server.json
