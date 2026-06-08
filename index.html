@@ -6047,7 +6047,7 @@ function actualizarIndicadoresUsuarioActivo() {
         console.log('Password:', password);
 
         // Buscar usuario
-        const user = buscarUsuarioParaLogin(usuario, password);
+        const user = await buscarUsuarioParaLogin(usuario, password);
         
         if (!user) {
             console.log('Usuario no encontrado');
