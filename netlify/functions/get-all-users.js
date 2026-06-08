@@ -1,13 +1,9 @@
-const admin = require('firebase-admin');
+const axios = require('axios');
 
-// Inicializar Firebase (usa variables de entorno)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    databaseURL: process.env.FIREBASE_DATABASE_URL
-  });
-}
-
-const db = admin.database();
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = 'HTellez182';
+const GITHUB_REPO = 'aventura-alola';
+const USERS_FILE = 'usuarios-data.json';
 
 exports.handler = async (event) => {
   try {
@@ -18,15 +14,30 @@ exports.handler = async (event) => {
       };
     }
 
-    // Leer todos los usuarios desde Firebase
-    const snapshot = await db.ref('usuarios').once('value');
-    const users = snapshot.val() || {};
+    // Obtener el archivo de GitHub
+    try {
+      const response = await axios.get(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${USERS_FILE}`,
+        {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3.raw'
+          }
+        }
+      );
 
-    // Retornar todos los usuarios
-    return {
-      statusCode: 200,
-      body: JSON.stringify(users)
-    };
+      const users = JSON.parse(response.data);
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify(users)
+      };
+    } catch (error) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'No users found' })
+      };
+    }
   } catch (error) {
     console.error('Error:', error);
     return {
