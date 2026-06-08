@@ -5508,22 +5508,37 @@ function populateGifElements(root) {
     }
 
     async function buscarUsuarioParaLogin(usuario, password) {
-        // Primero intentar cargar desde Netlify Functions
+        console.log('Buscando usuario en Supabase:', usuario);
+        
         try {
-            const response = await fetch(`/.netlify/functions/get-user?username=${usuario}`);
-            if (response.ok) {
-                const userData = await response.json();
-                if (userData.password === password) {
-                    return userData;
+            if (typeof supabase !== 'undefined' && supabase) {
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('usuario', usuario)
+                    .single();
+                
+                if (!error && data) {
+                    console.log('Usuario encontrado en Supabase:', data);
+                    if (data.contraseña === password) {
+                        return data;
+                    }
                 }
             }
         } catch (err) {
-            console.log('No se pudo conectar a Netlify Functions, usando localStorage');
+            console.log('Error al conectar a Supabase:', err);
         }
         
-        // Si falla, buscar en localStorage
         const usuariosLocales = JSON.parse(localStorage.getItem('usuarios') || '[]');
-        return usuariosLocales.find(u => u.usuario === usuario && u.password === password);
+        const usuarioLocal = usuariosLocales.find(u => u.usuario === usuario && u.password === password);
+        
+        if (usuarioLocal) {
+            console.log('Usuario encontrado en localStorage:', usuario);
+            return usuarioLocal;
+        }
+        
+        console.log('Usuario NO encontrado');
+        return null;
     }
 
     function buscarUsuarioParaLoginSync(usuario, password) {
