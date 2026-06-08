@@ -5505,7 +5505,26 @@ function populateGifElements(root) {
         return false;
     }
 
-    function buscarUsuarioParaLogin(usuario, password) {
+    async function buscarUsuarioParaLogin(usuario, password) {
+        // Primero intentar cargar desde Netlify Functions
+        try {
+            const response = await fetch(`/.netlify/functions/get-user?username=${usuario}`);
+            if (response.ok) {
+                const userData = await response.json();
+                if (userData.password === password) {
+                    return userData;
+                }
+            }
+        } catch (err) {
+            console.log('No se pudo conectar a Netlify Functions, usando localStorage');
+        }
+        
+        // Si falla, buscar en localStorage
+        const usuariosLocales = JSON.parse(localStorage.getItem('usuarios') || '[]');
+        return usuariosLocales.find(u => u.usuario === usuario && u.password === password);
+    }
+
+    function buscarUsuarioParaLoginSync(usuario, password) {
         const usuarioNormalizado = String(usuario || '').trim().toLowerCase();
         const passwordNormalizado = String(password || '').trim();
 
