@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="sync-users.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800;900&display=swap');
         body { font-family: 'Nunito', sans-serif; }
@@ -4058,6 +4056,13 @@
             .team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
+    <script>
+        // Inicializar Supabase
+        const SUPABASE_URL = 'https://qpwuuoaimyknuflcowpz.supabase.co';
+        const SUPABASE_KEY = 'qpwuuoaimyknuflcowpz';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase inicializado:', supabase);
+    </script>
 </head>
 <body class="text-gray-900 min-h-screen p-8 flex items-center justify-center transition-all duration-500" style="font-family:'Nunito',sans-serif; background:radial-gradient(circle at top, rgba(17,138,178,0.22), transparent 28%), radial-gradient(circle at bottom right, rgba(231,185,76,0.16), transparent 24%), linear-gradient(135deg, #06111d 0%, #0b2740 42%, #14496b 100%); overflow-x:hidden;">
 
