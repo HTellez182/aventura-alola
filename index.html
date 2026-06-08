@@ -6,8 +6,10 @@
     <title>Aventura de Bolsillo: Alola</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800;900&display=swap');
         body { font-family: 'Nunito', sans-serif; }
@@ -4057,11 +4059,10 @@
         }
     </style>
     <script>
-        // Inicializar Supabase
-        const SUPABASE_URL = 'https://qpwuuoaimyknuflcowpz.supabase.co';
-        const SUPABASE_KEY = 'qpwuuoaimyknuflcowpz';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Supabase inicializado:', supabase);
+        // Inicializar Firebase
+        firebase.initializeApp(window.RULETA_FIREBASE_CONFIG);
+        const firebaseDB = firebase.database();
+        console.log('Firebase inicializado correctamente');
     </script>
 </head>
 <body class="text-gray-900 min-h-screen p-8 flex items-center justify-center transition-all duration-500" style="font-family:'Nunito',sans-serif; background:radial-gradient(circle at top, rgba(17,138,178,0.22), transparent 28%), radial-gradient(circle at bottom right, rgba(231,185,76,0.16), transparent 24%), linear-gradient(135deg, #06111d 0%, #0b2740 42%, #14496b 100%); overflow-x:hidden;">
@@ -5513,38 +5514,43 @@ function populateGifElements(root) {
     }
 
     async function buscarUsuarioParaLogin(usuario, password) {
-        console.log('Buscando usuario en Supabase:', usuario);
+        console.log('Buscando usuario en Firebase:', usuario);
         
         try {
-            if (typeof supabase !== 'undefined' && supabase) {
-                const { data, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('usuario', usuario)
-                    .single();
-                
-                if (!error && data) {
-                    console.log('Usuario encontrado en Supabase:', data);
-                    if (data.contraseña === password) {
-                        return data;
-                    }
-                }
+            if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+                return new Promise((resolve) => {
+                    firebaseDB.ref('usuarios/' + usuario).once('value', (snapshot) => {
+                        const userData = snapshot.val();
+                        console.log('Datos de Firebase:', userData);
+                        
+                        if (userData && userData.contraseña === password) {
+                            console.log('Usuario encontrado en Firebase:', usuario);
+                            resolve(userData);
+                        } else {
+                            const usuariosLocales = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                            const usuarioLocal = usuariosLocales.find(u => u.usuario === usuario && u.password === password);
+                            
+                            if (usuarioLocal) {
+                                console.log('Usuario encontrado en localStorage:', usuario);
+                                resolve(usuarioLocal);
+                            } else {
+                                console.log('Usuario NO encontrado');
+                                resolve(null);
+                            }
+                        }
+                    }, (error) => {
+                        console.log('Error al leer Firebase:', error);
+                        resolve(null);
+                    });
+                });
             }
         } catch (err) {
-            console.log('Error al conectar a Supabase:', err);
+            console.log('Error al conectar a Firebase:', err);
         }
         
-        const usuariosLocales = JSON.parse(localStorage.getItem('usuarios') || '[]');
-        const usuarioLocal = usuariosLocales.find(u => u.usuario === usuario && u.password === password);
-        
-        if (usuarioLocal) {
-            console.log('Usuario encontrado en localStorage:', usuario);
-            return usuarioLocal;
-        }
-        
-        console.log('Usuario NO encontrado');
         return null;
     }
+
 
     function buscarUsuarioParaLoginSync(usuario, password) {
         const usuarioNormalizado = String(usuario || '').trim().toLowerCase();
