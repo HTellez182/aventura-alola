@@ -9733,20 +9733,33 @@ function abrirAdminUsuarios() {
                         usuarios.push(newUser);
                         guardarDatos('new_user');
                         
-                        // Guardar en el sistema de sincronizacion
+                        // Guardar en Firebase
                         try {
-                            if (typeof userSync !== 'undefined') {
-                                userSync.createUser(u, p, {
-                                    tokens: 500,
-                                    pokegiro: 2,
+                            if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+                                const userData = {
+                                    usuario: u,
+                                    nombre: n,
+                                    contraseña: p,
+                                    esAdmin: false,
+                                    pokeTokens: 0,
+                                    pokeGiro: 0,
                                     equipo: [],
                                     mochila: [],
-                                    medallas: []
+                                    medallas: [],
+                                    liderGym: false
+                                };
+                                firebaseDB.ref('usuarios/' + u).set(userData, (error) => {
+                                    if (error) {
+                                        console.error('Error guardando en Firebase:', error);
+                                        mostrarMensajeFlotante('Error guardando en la nube','bg-red-600');
+                                    } else {
+                                        console.log('Usuario guardado en Firebase:', u);
+                                        mostrarMensajeFlotante('Usuario creado exitosamente en la nube','bg-green-600');
+                                    }
                                 });
-                                console.log('Usuario guardado en sync:', u);
                             }
                         } catch (err) {
-                            console.warn('Error guardando en sync:', err);
+                            console.warn('Error guardando en Firebase:', err);
                         }
                         
                         renderAdminUsuarios();
