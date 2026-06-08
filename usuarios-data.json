@@ -1,0 +1,50 @@
+{
+  "odin": {
+    "nombre": "Odin",
+    "usuario": "odin",
+    "contraseña": "admin",
+    "esAdmin": true,
+    "pokeTokens": 500,
+    "pokeGiro": 2,
+    "equipo": [],
+    "mochila": [],
+    "medallas": [],
+    "liderGym": false
+  },
+  "hugo": {
+    "nombre": "Hugo",
+    "usuario": "hugo",
+    "contraseña": "hugo",
+    "esAdmin": false,
+    "pokeTokens": 450,
+    "pokeGiro": 0,
+    "equipo": [],
+    "mochila": [],
+    "medallas": [],
+    "liderGym": false
+  },
+  "ivan": {
+    "nombre": "Ivan",
+    "usuario": "ivan",
+    "contraseña": "ivan",
+    "esAdmin": false,
+    "pokeTokens": 500,
+    "pokeGiro": 1,
+    "equipo": [],
+    "mochila": [],
+    "medallas": [],
+    "liderGym": false
+  },
+  "tellez": {
+    "nombre": "Tellez",
+    "usuario": "tellez",
+    "contraseña": "123",
+    "esAdmin": false,
+    "pokeTokens": 0,
+    "pokeGiro": 0,
+    "equipo": [],
+    "mochila": [],
+    "medallas": [],
+    "liderGym": false
+  }
+}
