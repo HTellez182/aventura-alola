@@ -1,8 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
-// Archivo donde se guardan los usuarios
-const USERS_FILE = path.join('/tmp', 'aventura-alola-users.json');
+// Inicializar Firebase (usa variables de entorno)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    databaseURL: process.env.FIREBASE_DATABASE_URL
+  });
+}
+
+const db = admin.database();
 
 exports.handler = async (event) => {
   try {
@@ -13,18 +18,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // Leer usuarios
-    let users = {};
-    if (fs.existsSync(USERS_FILE)) {
-      users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-    }
+    // Leer todos los usuarios desde Firebase
+    const snapshot = await db.ref('usuarios').once('value');
+    const users = snapshot.val() || {};
 
-    // Retornar solo los nombres de usuarios (sin contraseñas)
-    const usernames = Object.keys(users);
-
+    // Retornar todos los usuarios
     return {
       statusCode: 200,
-      body: JSON.stringify({ users: usernames })
+      body: JSON.stringify(users)
     };
   } catch (error) {
     console.error('Error:', error);

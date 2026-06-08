@@ -1,17 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
-// Archivo donde se guardan los usuarios
-const USERS_FILE = path.join('/tmp', 'aventura-alola-users.json');
-
-// Inicializar archivo si no existe
-if (!fs.existsSync(USERS_FILE)) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify({
-    odin: { password: 'admin', tokens: 1000, pokegiro: 5, equipo: [], mochila: [], medallas: [], isAdmin: true },
-    hugo: { password: 'hugo', tokens: 500, pokegiro: 2, equipo: [], mochila: [], medallas: [] },
-    ivan: { password: 'ivan', tokens: 500, pokegiro: 2, equipo: [], mochila: [], medallas: [] }
-  }));
+// Inicializar Firebase (usa variables de entorno)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    databaseURL: process.env.FIREBASE_DATABASE_URL
+  });
 }
+
+const db = admin.database();
 
 exports.handler = async (event) => {
   try {
@@ -31,24 +27,15 @@ exports.handler = async (event) => {
       };
     }
 
-    // Leer usuarios actuales
-    let users = {};
-    if (fs.existsSync(USERS_FILE)) {
-      users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-    }
-
-    // Guardar/actualizar usuario con esAdmin
-    users[username] = {
+    // Guardar en Firebase Realtime Database
+    await db.ref(`usuarios/${username}`).set({
       ...userData,
       esAdmin: userData.esAdmin || (username === 'odin')
-    };
-
-    // Escribir usuarios actualizados
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, message: 'Usuario guardado' })
+      body: JSON.stringify({ success: true, message: 'Usuario guardado en Firebase' })
     };
   } catch (error) {
     console.error('Error:', error);
