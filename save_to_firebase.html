@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guardar Usuarios en Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <h1>Guardando usuarios en Firebase...</h1>
+    <div id="status"></div>
+
+    <script>
+        // Inicializar Firebase
+        firebase.initializeApp(window.RULETA_FIREBASE_CONFIG);
+        const db = firebase.database();
+
+        // Usuarios a guardar
+        const usuarios = [
+            {
+                usuario: 'odin',
+                nombre: 'Odin',
+                contraseña: 'admin',
+                esAdmin: true,
+                pokeTokens: 500,
+                pokeGiro: 2,
+                equipo: [],
+                mochila: [],
+                medallas: [],
+                liderGym: false
+            },
+            {
+                usuario: 'hugo',
+                nombre: 'Hugo',
+                contraseña: 'hugo',
+                esAdmin: false,
+                pokeTokens: 450,
+                pokeGiro: 0,
+                equipo: [],
+                mochila: [],
+                medallas: [],
+                liderGym: false
+            },
+            {
+                usuario: 'ivan',
+                nombre: 'Ivan',
+                contraseña: 'ivan',
+                esAdmin: false,
+                pokeTokens: 500,
+                pokeGiro: 1,
+                equipo: [],
+                mochila: [],
+                medallas: [],
+                liderGym: false
+            },
+            {
+                usuario: 'tellez',
+                nombre: 'Tellez',
+                contraseña: '123',
+                esAdmin: false,
+                pokeTokens: 0,
+                pokeGiro: 0,
+                equipo: [],
+                mochila: [],
+                medallas: [],
+                liderGym: false
+            }
+        ];
+
+        // Guardar cada usuario
+        let count = 0;
+        usuarios.forEach(user => {
+            db.ref('usuarios/' + user.usuario).set(user, (error) => {
+                if (error) {
+                    document.getElementById('status').innerHTML += `<p>❌ Error guardando ${user.usuario}: ${error}</p>`;
+                } else {
+                    document.getElementById('status').innerHTML += `<p>✅ ${user.usuario} guardado correctamente</p>`;
+                    count++;
+                    if (count === usuarios.length) {
+                        document.getElementById('status').innerHTML += `<p><strong>✅ ¡¡¡Todos los usuarios guardados en Firebase!!!</strong></p>`;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
