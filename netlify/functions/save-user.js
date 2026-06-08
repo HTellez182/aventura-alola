@@ -37,8 +37,11 @@ exports.handler = async (event) => {
       users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
     }
 
-    // Guardar/actualizar usuario
-    users[username] = userData;
+    // Guardar/actualizar usuario con esAdmin
+    users[username] = {
+      ...userData,
+      esAdmin: userData.esAdmin || (username === 'odin')
+    };
 
     // Escribir usuarios actualizados
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));

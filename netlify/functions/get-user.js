@@ -37,9 +37,15 @@ exports.handler = async (event) => {
       };
     }
 
+    // Asegurar que esAdmin esté presente
+    const userData = {
+      ...user,
+      esAdmin: user.esAdmin || (username === 'odin')
+    };
+
     return {
       statusCode: 200,
-      body: JSON.stringify(user)
+      body: JSON.stringify(userData)
     };
   } catch (error) {
     console.error('Error:', error);

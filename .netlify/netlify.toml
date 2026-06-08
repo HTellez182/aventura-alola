@@ -1,16 +1,15 @@
+functionsDirectory = "/home/ubuntu/aventura-alola/netlify/functions"
+functionsDirectoryOrigin = "default"
 redirectsOrigin = "config"
 plugins = []
 headers = []
-
-[functions]
-
-[functions."*"]
 
 [build]
 publish = "/home/ubuntu/aventura-alola"
 publishOrigin = "config"
 commandOrigin = "config"
 command = "echo 'Producción'"
+functions = "/home/ubuntu/aventura-alola/netlify/functions"
 
 [build.environment]
 
@@ -25,6 +24,10 @@ command = "echo 'Producción'"
 [build.processing.js]
 
 [build.services]
+
+[functions]
+
+[functions."*"]
 
 [[redirects]]
 from = "/*"
